@@ -1,6 +1,7 @@
 ﻿from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -392,6 +393,37 @@ def schema_faq(items: tuple[tuple[str, str], ...]) -> str:
     return json.dumps({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": question, "acceptedAnswer": {"@type": "Answer", "text": answer}} for question, answer in items]}, ensure_ascii=False, indent=2)
 
 
+
+# 2026-09-30: the maintained model / vendor / price pages now live on the main site (blog-nextjs).
+# Each legacy slug maps to (new model page, vendor hub, pricing comparison); None when the model has no new page.
+MAIN = "https://crazyrouter.com"
+NEW_PAGES: dict[str, tuple[str | None, str, str | None]] = {
+    "gpt-4o": (f"{MAIN}/en/models/openai/gpt-4o", f"{MAIN}/en/models/openai", f"{MAIN}/en/pricing/gpt-4o"),
+    "gpt-5": (f"{MAIN}/en/models/openai/gpt-5", f"{MAIN}/en/models/openai", f"{MAIN}/en/pricing/gpt-5"),
+    "gpt-5-mini": (None, f"{MAIN}/en/models/openai", f"{MAIN}/en/pricing/gpt-5-4-mini"),
+    "claude-sonnet-4-6": (f"{MAIN}/en/models/anthropic/claude-sonnet-4-6", f"{MAIN}/en/models/anthropic", f"{MAIN}/en/pricing/claude-sonnet-4-6"),
+    "claude-opus-4-6": (f"{MAIN}/en/models/anthropic/claude-opus-4-7", f"{MAIN}/en/models/anthropic", f"{MAIN}/en/pricing/claude-opus-4-7"),
+    "gemini-2-5-pro": (f"{MAIN}/en/models/google/gemini-2-5-pro", f"{MAIN}/en/models/google", f"{MAIN}/en/pricing/gemini-2-5-pro"),
+    "gemini-2-5-flash": (f"{MAIN}/en/models/google/gemini-2-5-flash", f"{MAIN}/en/models/google", f"{MAIN}/en/pricing/gemini-2-5-flash"),
+    "deepseek-v3": (f"{MAIN}/en/models/deepseek/deepseek-v4-pro", f"{MAIN}/en/models/deepseek", f"{MAIN}/en/pricing/deepseek-v4-pro"),
+    "deepseek-r1": (f"{MAIN}/en/models/deepseek/deepseek-v4-flash", f"{MAIN}/en/models/deepseek", f"{MAIN}/en/pricing/deepseek-v4-flash"),
+    "o3": (f"{MAIN}/en/models/openai/o3", f"{MAIN}/en/models/openai", f"{MAIN}/en/pricing/o3"),
+    "o4-mini": (None, f"{MAIN}/en/models/openai", None),
+}
+
+
+def new_pages_section(model: Model) -> str:
+    detail, vendor, pricing = NEW_PAGES.get(model.slug, (None, f"{MAIN}/en/models", None))
+    q = f"?utm_source=models-static&utm_medium=landing&utm_campaign={model.slug}"
+    cards = []
+    if detail:
+        cards.append(f'<a href="{detail}{q}" class="card related"><h3>{model.name} model page</h3><p>Live price, real sample outputs, native endpoint notes and copy-paste code for {model.name}.</p><span>Open model page →</span></a>')
+    if pricing:
+        cards.append(f'<a href="{pricing}{q}" class="card related"><h3>{model.name} price comparison</h3><p>{model.provider} list price vs Azure, Bedrock, Vertex, OpenRouter and Crazyrouter, verified daily, with price history.</p><span>Compare prices →</span></a>')
+    cards.append(f'<a href="{vendor}{q}" class="card related"><h3>All {model.provider} models</h3><p>Every {model.provider} model routed on Crazyrouter, grouped by task, with live per-token prices.</p><span>Browse vendor page →</span></a>')
+    return f'<section><h2>Compare and browse</h2><p class="subtitle">The maintained model, vendor and price-comparison pages live on crazyrouter.com and refresh daily.</p><div class="grid3">{"".join(cards)}</div></section>'
+
+
 def related_cards(model: Model, prices_by_slug: dict[str, dict]) -> str:
     blocks: list[str] = []
     for slug in model.related:
@@ -453,6 +485,7 @@ def page_template(model: Model, prices: dict, prices_by_slug: dict[str, dict]) -
 <section><h2>When not to choose {model.name}</h2><p class="subtitle">High-quality landing pages should help visitors disqualify the wrong model, not just push every option.</p><div class="grid2">{section_cards('This is usually a sign that another model deserves a closer look first.', model.not_best_for)}</div></section>
 <section><h2>Why teams use Crazyrouter here</h2><p class="subtitle">The gateway matters when you want commercial flexibility, not just lower price.</p><div class="grid3">{section_cards('This matters when the business wants optionality and easier operations.', model.why_crazyrouter)}</div></section>
 <section><h2>How to think about {model.name}</h2><p class="subtitle">These notes help turn a pricing page into a real decision page.</p><div class="grid3">{section_cards('Comparison note', model.comparison_notes)}</div></section>
+{new_pages_section(model)}
 <section><h2>Start in 30 seconds</h2><p class="subtitle">Use the OpenAI SDK style and swap only the base URL plus the model name.</p><div class="tabs"><button class="tab active" onclick="showTab(event,'python')">Python</button><button class="tab" onclick="showTab(event,'curl')">cURL</button><button class="tab" onclick="showTab(event,'node')">Node.js</button></div><div class="code"><button class="copy" onclick="copyCode()">Copy</button><div id="tab-python" class="panel active"><pre>from openai import OpenAI
 
 client = OpenAI(
@@ -568,13 +601,32 @@ def sitemap() -> str:
     return "\n".join(rows)
 
 
+def published_record(slug: str) -> dict | None:
+    """Recover model_ratio / completion_ratio / discount from the last generated page so a model that
+    disappeared from the live feed keeps its published prices instead of breaking the whole build."""
+    page = ROOT / slug / "index.html"
+    if not page.exists():
+        return None
+    html = page.read_text(encoding="utf-8")
+    m = re.search(r'<span class="old">\$([0-9.]+)</span></div><div class="price-row"><span class="muted">Output per 1M tokens</span><span class="old">\$([0-9.]+)</span>.*?<span class="green">\$([0-9.]+)</span>', html, re.S)
+    if not m:
+        return None
+    off_in, off_out, cr_in = (float(x) for x in m.groups())
+    return {"model_ratio": off_in / 2, "completion_ratio": off_out / off_in if off_in else 1, "discount": cr_in / off_in if off_in else 1}
+
+
 def build() -> None:
     records = fetch_prices()
     prices_by_slug: dict[str, dict] = {}
     for model in MODELS:
-        if model.api_model not in records:
-            raise KeyError(f"Missing pricing record for {model.api_model}")
-        prices_by_slug[model.slug] = compute_price(records[model.api_model])
+        record = records.get(model.api_model)
+        if record is None:
+            # model retired from the live feed: keep the numbers already published on the page
+            record = published_record(model.slug)
+            if record is None:
+                raise KeyError(f"Missing pricing record for {model.api_model}")
+            print(f"[warn] {model.api_model} not in pricing feed; reusing published prices for /{model.slug}")
+        prices_by_slug[model.slug] = compute_price(record)
     for model in MODELS:
         target = ROOT / model.slug
         target.mkdir(parents=True, exist_ok=True)
