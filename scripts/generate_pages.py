@@ -354,6 +354,24 @@ def page_link(slug: str) -> str:
     return f"{SITE_URL}/{slug}"
 
 
+# Since 2026-10-12 crazyrouter.com/models/* 301s to the Next.js pages (Worker crazyrouter-models, same table).
+# This copy only lives on as the GitHub Pages mirror, so its canonical points at the live successor.
+CANONICAL = {
+    "": "https://crazyrouter.com/en/models",
+    "claude-sonnet-4-6": "https://crazyrouter.com/en/pricing/claude-sonnet-4-6",
+    "gpt-4o": "https://crazyrouter.com/en/pricing/gpt-4o",
+    "gpt-5": "https://crazyrouter.com/en/models/openai/gpt-5",
+    "o3": "https://crazyrouter.com/en/models/openai/o3",
+    "gemini-2-5-pro": "https://crazyrouter.com/en/models/google/gemini-2-5-pro",
+    "gemini-2-5-flash": "https://crazyrouter.com/en/models/google/gemini-2-5-flash",
+    "claude-opus-4-6": "https://crazyrouter.com/en/models/anthropic",
+    "gpt-5-mini": "https://crazyrouter.com/en/models/openai",
+    "o4-mini": "https://crazyrouter.com/en/models/openai",
+    "deepseek-v3": "https://crazyrouter.com/en/models/deepseek",
+    "deepseek-r1": "https://crazyrouter.com/en/models/deepseek",
+}
+
+
 def compare_label(provider: str) -> str:
     if provider == "OpenAI":
         return "OpenAI Direct"
@@ -471,11 +489,11 @@ def page_template(model: Model, prices: dict, prices_by_slug: dict[str, dict]) -
 <meta name="description" content="{description}">
 <meta name="keywords" content="{', '.join(model.keywords)}">
 {robots_meta(model)}
-<link rel="canonical" href="{page_link(model.slug)}">
+<link rel="canonical" href="{CANONICAL[model.slug]}">
 <meta property="og:title" content="{model.name} API Pricing via Crazyrouter">
 <meta property="og:description" content="{description}">
 <meta property="og:type" content="product">
-<meta property="og:url" content="{page_link(model.slug)}">
+<meta property="og:url" content="{CANONICAL[model.slug]}">
 <meta property="og:image" content="https://crazyrouter.com/twitter-card.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{model.name} API Pricing via Crazyrouter">
@@ -579,11 +597,11 @@ def index_page(prices_by_slug: dict[str, dict]) -> str:
 <meta name="description" content="Compare popular OpenAI, Anthropic, Google, and DeepSeek model pricing on Crazyrouter. Browse the small set of maintained index-priority landing pages plus additional model pages under review.">
 <meta name="keywords" content="ai model pricing, llm api pricing, compare ai models, crazyrouter models">
 <meta name="robots" content="index,follow,max-image-preview:large">
-<link rel="canonical" href="https://crazyrouter.com/models/">
+<link rel="canonical" href="https://crazyrouter.com/en/models">
 <meta property="og:title" content="Compare AI model pricing on Crazyrouter">
 <meta property="og:description" content="Browse GPT, Claude, Gemini, DeepSeek, and reasoning model landing pages with live Crazyrouter pricing.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://crazyrouter.com/models/">
+<meta property="og:url" content="https://crazyrouter.com/en/models">
 <meta property="og:image" content="https://crazyrouter.com/twitter-card.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Compare AI model pricing on Crazyrouter">
@@ -601,7 +619,8 @@ def index_page(prices_by_slug: dict[str, dict]) -> str:
 
 
 def sitemap() -> str:
-    indexed_urls = ["https://crazyrouter.com/models/"] + [page_link(model.slug) for model in MODELS if model.seo_status == "index"]
+    # Lists every legacy URL (not just index-priority ones) so Google recrawls each and sees its 301.
+    indexed_urls = ["https://crazyrouter.com/models/"] + [page_link(model.slug) for model in MODELS]
     rows = ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for url in indexed_urls:
         rows.append("  <url>")
