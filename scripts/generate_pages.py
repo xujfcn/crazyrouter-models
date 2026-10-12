@@ -2,14 +2,15 @@
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 from pathlib import Path
 from urllib.request import Request, urlopen
+from html import escape
 
 ROOT = Path(__file__).resolve().parents[1]
 PRICING_URL = "https://crazyrouter.com/api/pricing"
-REGISTER_URL = "https://crazyrouter.com/#/register"
+REGISTER_URL = "https://crazyrouter.com/register"
 SITE_URL = "https://crazyrouter.com/models"
 OG_IMAGE = "https://crazyrouter.com/twitter-card.png"
 TODAY = date.today().isoformat()
@@ -48,7 +49,7 @@ MODELS = [
         slug="gpt-4o",
         name="GPT-4o",
         provider="OpenAI",
-        api_model="chatgpt-4o-latest",
+        api_model="gpt-4o",
         seo_status="index",
         hero_badge="OpenAI GPT-4o",
         summary="OpenAI's mainstream multimodal model for chat, vision, and production assistants.",
@@ -68,13 +69,13 @@ MODELS = [
         owner="growth",
         review_cadence="monthly",
         example_prompt="Summarize this support ticket and identify whether an image attachment changes the priority.",
-        faq=(("How much does GPT-4o cost on Crazyrouter?", "GPT-4o costs $2.75 per 1M input tokens and $8.25 per 1M output tokens on Crazyrouter based on the latest pricing sync. That is 45% lower than the direct list price used on this page."), ("Why would a team choose GPT-4o instead of GPT-5?", "GPT-4o is often the safer choice when you want mainstream multimodal coverage, lower latency, and a simpler cost profile. GPT-5 is the better choice for harder reasoning and coding-heavy workloads."), ("Can I migrate an existing OpenAI integration to Crazyrouter quickly?", "Yes. GPT-4o is available behind an OpenAI-compatible API. In most cases you only change the base URL, API key, and optionally the model name."), ("What makes this page worth indexing long term?", "This page is maintained as a conversion-oriented landing page with live pricing, implementation examples, model fit guidance, and an explicit review date so it stays more useful than a thin template page."), ("What context window does GPT-4o support?", "This page tracks GPT-4o with a 128K context window and an estimated 16K max output, which is enough for many production assistant and analysis use cases."), ("When should I not use GPT-4o?", "If your main requirement is deeper reasoning or long chain-of-thought behavior, a reasoning-oriented model like GPT-5 or o3 may be a better fit. If your main requirement is lowest cost at scale, a cheaper model may make more sense.")),
+        faq=(("How much does GPT-4o cost on Crazyrouter?", "See the dated price table on this page."), ("Why would a team choose GPT-4o instead of GPT-5?", "GPT-4o is often the safer choice when you want mainstream multimodal coverage, lower latency, and a simpler cost profile. GPT-5 is the better choice for harder reasoning and coding-heavy workloads."), ("Can I migrate an existing OpenAI integration to Crazyrouter quickly?", "Yes. GPT-4o is available behind an OpenAI-compatible API. In most cases you only change the base URL, API key, and optionally the model name."), ("What makes this page worth indexing long term?", "This page is maintained as a conversion-oriented landing page with live pricing, implementation examples, model fit guidance, and an explicit review date so it stays more useful than a thin template page."), ("What context window does GPT-4o support?", "This page tracks GPT-4o with a 128K context window and an estimated 16K max output, which is enough for many production assistant and analysis use cases."), ("When should I not use GPT-4o?", "If your main requirement is deeper reasoning or long chain-of-thought behavior, a reasoning-oriented model like GPT-5 or o3 may be a better fit. If your main requirement is lowest cost at scale, a cheaper model may make more sense.")),
     ),
     Model(
         slug="gpt-5",
         name="GPT-5",
         provider="OpenAI",
-        api_model="gpt-5-chat",
+        api_model="gpt-5",
         seo_status="index",
         hero_badge="OpenAI GPT-5",
         summary="OpenAI's flagship chat model for stronger reasoning, coding, and agent workflows.",
@@ -94,7 +95,7 @@ MODELS = [
         owner="growth",
         review_cadence="monthly",
         example_prompt="Review this architecture proposal, identify risks, and suggest a phased migration plan.",
-        faq=(("How much does GPT-5 cost on Crazyrouter?", "GPT-5 costs $0.69 per 1M input tokens and $5.50 per 1M output tokens on Crazyrouter from the current pricing feed. That is 45% below the direct list price referenced on this page."), ("Who should actually pay for GPT-5?", "Teams should pay for GPT-5 when model quality changes the business result, such as complex coding, difficult planning, or high-value research workflows. For lighter production traffic, GPT-5 Mini or GPT-4o may be more efficient."), ("Is GPT-5 available through an OpenAI-compatible API?", "Yes. GPT-5 can be called on Crazyrouter with the same general SDK pattern many teams already use for OpenAI integrations."), ("Why not use GPT-5 for everything?", "Because a premium reasoning model is not always the best cost-performance choice. Many teams route only the hardest requests to GPT-5 and keep routine requests on cheaper models."), ("What does the 400K context window matter for?", "A very large context window is useful for long documents, large codebases, agent memory, and workflows where the model needs to reason over more background at once."), ("Why keep this page indexed rather than treat it as a throwaway landing page?", "GPT-5 is a core commercial-intent term. This page is intended to be a maintained decision page with pricing, usage guidance, and comparison context rather than a thin paid-traffic page.")),
+        faq=(("How much does GPT-5 cost on Crazyrouter?", "See the dated price table on this page."), ("Who should actually pay for GPT-5?", "Teams should pay for GPT-5 when model quality changes the business result, such as complex coding, difficult planning, or high-value research workflows. For lighter production traffic, GPT-5 Mini or GPT-4o may be more efficient."), ("Is GPT-5 available through an OpenAI-compatible API?", "Yes. GPT-5 can be called on Crazyrouter with the same general SDK pattern many teams already use for OpenAI integrations."), ("Why not use GPT-5 for everything?", "Because a premium reasoning model is not always the best cost-performance choice. Many teams route only the hardest requests to GPT-5 and keep routine requests on cheaper models."), ("What does the 400K context window matter for?", "A very large context window is useful for long documents, large codebases, agent memory, and workflows where the model needs to reason over more background at once."), ("Why keep this page indexed rather than treat it as a throwaway landing page?", "GPT-5 is a core commercial-intent term. This page is intended to be a maintained decision page with pricing, usage guidance, and comparison context rather than a thin paid-traffic page.")),
     ),
     Model(
         slug="gpt-5-mini",
@@ -146,7 +147,7 @@ MODELS = [
         owner="growth",
         review_cadence="monthly",
         example_prompt="Review this pull request summary, identify architectural risks, and suggest the best next implementation step.",
-        faq=(("How much does Claude Sonnet 4.6 cost on Crazyrouter?", "Claude Sonnet 4.6 costs $1.65 per 1M input tokens and $8.25 per 1M output tokens on Crazyrouter from the latest sync. That is 45% lower than the direct list price referenced here."), ("Why do teams often compare Claude Sonnet 4.6 with GPT-5 instead of GPT-4o?", "Because Sonnet and GPT-5 are more often evaluated for higher-value coding, writing, and analysis work. GPT-4o is still important, but it is often chosen for broader multimodal coverage and speed."), ("Is Claude Sonnet 4.6 available behind an OpenAI-style gateway?", "Yes. Crazyrouter lets teams access Claude Sonnet 4.6 with the same general OpenAI-compatible request flow used across the rest of the platform."), ("When should I choose Claude Sonnet 4.6 over Claude Opus 4.6?", "Choose Sonnet when you want the strong Claude family quality profile but need better cost-efficiency for repeated production use. Choose Opus when top-end output quality matters more than cost."), ("What makes this page a long-term index page rather than a campaign page?", "This page is designed as a maintained pricing and decision asset for a head term with ongoing commercial intent, not just a temporary paid-traffic variant."), ("What is Claude Sonnet 4.6 not ideal for?", "It is not the strongest fit when the only goal is lowest-cost throughput or when the workflow is heavily centered on richer audio or video-native multimodal input.")),
+        faq=(("How much does Claude Sonnet 4.6 cost on Crazyrouter?", "See the dated price table on this page."), ("Why do teams often compare Claude Sonnet 4.6 with GPT-5 instead of GPT-4o?", "Because Sonnet and GPT-5 are more often evaluated for higher-value coding, writing, and analysis work. GPT-4o is still important, but it is often chosen for broader multimodal coverage and speed."), ("Is Claude Sonnet 4.6 available behind an OpenAI-style gateway?", "Yes. Crazyrouter lets teams access Claude Sonnet 4.6 with the same general OpenAI-compatible request flow used across the rest of the platform."), ("When should I choose Claude Sonnet 4.6 over Claude Opus 4.6?", "Choose Sonnet when you want the strong Claude family quality profile but need better cost-efficiency for repeated production use. Choose Opus when top-end output quality matters more than cost."), ("What makes this page a long-term index page rather than a campaign page?", "This page is designed as a maintained pricing and decision asset for a head term with ongoing commercial intent, not just a temporary paid-traffic variant."), ("What is Claude Sonnet 4.6 not ideal for?", "It is not the strongest fit when the only goal is lowest-cost throughput or when the workflow is heavily centered on richer audio or video-native multimodal input.")),
     ),
     Model(
         slug="claude-opus-4-6",
@@ -343,7 +344,7 @@ def fetch_prices() -> dict[str, dict]:
 
 
 def money(value: float) -> str:
-    return f"{value:.2f}"
+    return f"{value:.6g}"
 
 
 def register_link(slug: str) -> str:
@@ -374,18 +375,18 @@ CANONICAL = {
 
 def compare_label(provider: str) -> str:
     if provider == "OpenAI":
-        return "OpenAI Direct"
+        return "Reference base rate"
     if provider == "Anthropic":
-        return "Anthropic Direct"
+        return "Reference base rate"
     if provider == "Google":
-        return "Google AI Direct"
-    return f"{provider} Direct"
+        return "Reference base rate"
+    return "Reference base rate"
 
 
 def compute_price(record: dict) -> dict[str, float | int]:
     official_input = float(record["model_ratio"]) * 2
     official_output = official_input * float(record["completion_ratio"])
-    discount = float(record["discount"])
+    discount = float(record.get("group_discounts", {}).get("default", record["discount"]))
     return {
         "official_input": official_input,
         "official_output": official_output,
@@ -395,16 +396,9 @@ def compute_price(record: dict) -> dict[str, float | int]:
     }
 
 
-def price_faq(model: Model, prices: dict) -> tuple[str, str]:
-    answer = f"{model.name} costs ${money(prices['crazy_input'])} per 1M input tokens and ${money(prices['crazy_output'])} per 1M output tokens on Crazyrouter based on the latest pricing sync."
-    if prices["savings"] > 0:
-        answer += f" That is {prices['savings']}% lower than the direct list price used on this page."
-    return (f"How much does {model.name} cost on Crazyrouter?", answer)
-
-
 def default_faq(model: Model, prices: dict) -> tuple[tuple[str, str], ...]:
     return (
-        price_faq(model, prices),
+        (f"How much does {model.name} cost on Crazyrouter?", f"{model.name} costs ${money(prices['crazy_input'])} per 1M input tokens and ${money(prices['crazy_output'])} per 1M output tokens on Crazyrouter based on the latest pricing sync."),
         (f"Is {model.name} available through an OpenAI-compatible API?", f"Yes. {model.name} can be accessed through Crazyrouter with the same general OpenAI-compatible request flow used across the platform."),
         (f"What is {model.name} best for?", f"{model.name} is best suited to {model.best_for[0].lower()}, {model.best_for[1].lower()}, and {model.best_for[2].lower()}."),
         (f"When should this page stay out of search results?", f"This page is currently marked noindex because it is useful for navigation and campaign traffic, but it is not yet one of the small set of landing pages prioritized for long-term organic indexation."),
@@ -456,7 +450,9 @@ def related_cards(model: Model, prices_by_slug: dict[str, dict]) -> str:
     blocks: list[str] = []
     for slug in model.related:
         item = BY_SLUG[slug]
-        prices = prices_by_slug[slug]
+        prices = prices_by_slug.get(slug)
+        if prices is None:
+            continue
         blocks.append(f'<a href="/models/{item.slug}" class="card related"><h3>{item.name}</h3><p>{item.summary}</p><span>From ${money(prices["crazy_input"])} / 1M input</span></a>')
     return "".join(blocks)
 
@@ -476,10 +472,9 @@ def robots_meta(model: Model) -> str:
 
 
 def page_template(model: Model, prices: dict, prices_by_slug: dict[str, dict]) -> str:
-    # Hand-written FAQs keep their editorial answers, but the price answer always comes from the live sync.
-    faq = ((price_faq(model, prices),) + model.faq[1:]) if model.faq else default_faq(model, prices)
+    faq = (default_faq(model, prices)[0],) + tuple((q, a) for q, a in (model.faq or default_faq(model, prices)) if "cost on Crazyrouter" not in q)
     title = f"{model.name} API Pricing & Access - Save {prices['savings']}% | Crazyrouter"
-    description = f"Access {model.name} API at ${money(prices['crazy_input'])} per 1M input tokens and ${money(prices['crazy_output'])} per 1M output tokens via Crazyrouter. OpenAI-compatible access, clear pricing, and {prices['savings']}% below direct pricing where applicable."
+    description = f"Access {model.name} API at ${money(prices['crazy_input'])} per 1M input tokens and ${money(prices['crazy_output'])} per 1M output tokens via Crazyrouter. OpenAI-compatible access, clear pricing, and {prices['savings']}% below the feed base rate where applicable."
     return f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -507,8 +502,8 @@ def page_template(model: Model, prices: dict, prices_by_slug: dict[str, dict]) -
 <body>
 <div class="nav"><div class="wrap navin"><a class="brand" href="https://crazyrouter.com"><svg viewBox="0 0 563 648" width="24" height="28" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M167.5 190L276.5 190L277 191.5L253 234L247.5 235L235.5 234L217.5 234L191.5 234L164.5 235L150.5 239Q132.7 246.7 121 260.5Q108.2 275.2 102 296.5L99 312.5L99 335.5L102 351.5L110 371.5Q118.1 386.4 130.5 397Q143.5 409 164.5 413L173.5 413L258.5 414L314.5 318L433.5 318Q449.3 314.8 457 303.5L462 294.5L465 283.5L465 269.5L460 253.5L449.5 241L440.5 236L430.5 234L332.5 234L258.5 361L212.5 361L212 359.5L310.5 190L438.5 190L448.5 192L461.5 197Q476 205 486 217.5L496 233.5L502 250.5L504 260.5L504 268.5L505 269.5L505 283.5L504 284.5L503 297.5L499 311.5Q490.8 331.8 475.5 345L462.5 354L446 360.5L502 452.5L504 458L456.5 458L454 455.5L416 389.5L398.5 362L336.5 362L335 363.5L285 452.5L280.5 458L167.5 458L153.5 456Q112.4 445.6 90 416.5Q72.7 396.3 64 367.5L59 343.5L58 314.5L59 313.5L60 297.5L64 280.5L73 257.5Q85.3 233.8 104.5 217Q116.8 206.3 132.5 199L149.5 193L166.5 191L167.5 190Z"/></svg> Crazyrouter</a><div class="menu"><a class="active" href="/models/">Models</a><a href="https://crazyrouter.com/tools/pricing-calculator">Pricing</a><a href="https://docs.crazyrouter.com/introduction">Docs</a><a href="https://crazyrouter.com/tools/">Tools</a></div><a class="btn dark" href="{register_link(model.slug)}">Get API Key</a></div></div>
 <div class="wrap">
-<section class="hero"><div class="badge">{model.hero_badge}</div><h1>{model.name} API at <span>{prices['savings']}% off</span></h1><p class="lead">{model.summary} {model.description}</p><div class="hero-actions"><a class="btn primary" href="{register_link(model.slug)}">Start free</a><a class="btn light" href="#pricing">View pricing</a></div><div class="stats"><div class="stat">From ${money(prices['crazy_input'])} / 1M input</div><div class="stat">{model.context_window} context</div><div class="stat">{model.modality}</div></div></section>
-<section id="pricing"><h2>{model.name} pricing comparison</h2><p class="subtitle">Compare the current Crazyrouter token price with the direct provider list price used for this landing page.</p><div class="grid2"><div class="card"><h3>{compare_label(model.provider)}</h3><div class="price-row"><span class="muted">Input per 1M tokens</span><span class="old">${money(prices['official_input'])}</span></div><div class="price-row"><span class="muted">Output per 1M tokens</span><span class="old">${money(prices['official_output'])}</span></div><div class="price-row"><span class="muted">Billing</span><span>Pay as you go</span></div></div><div class="card highlight"><span class="save">Save {prices['savings']}%</span><h3>Crazyrouter</h3><div class="price-row"><span class="muted">Input per 1M tokens</span><span class="green">${money(prices['crazy_input'])}</span></div><div class="price-row"><span class="muted">Output per 1M tokens</span><span class="green">${money(prices['crazy_output'])}</span></div><div class="price-row"><span class="muted">Billing</span><span>One key for 600+ models</span></div></div></div><div class="banner">Save ${money(prices['official_input'] - prices['crazy_input'])} per 1M input tokens on {model.name}. This page is updated from the live Crazyrouter pricing feed and reviewed on a regular cadence.</div></section>
+<section class="hero"><div class="badge">{model.hero_badge}</div><h1>{model.name} API at <span>{prices['savings']}% off</span></h1><p class="lead">{model.summary} {model.description}</p><div class="hero-actions"><a class="btn primary" href="{register_link(model.slug)}">Create an account</a><a class="btn light" href="#pricing">View pricing</a></div><div class="stats"><div class="stat">From ${money(prices['crazy_input'])} / 1M input</div><div class="stat">{model.context_window} context</div><div class="stat">{model.modality}</div></div></section>
+<section id="pricing"><h2>{model.name} pricing comparison</h2><p class="subtitle">Compare the current Crazyrouter token price with the base rate in the same Crazyrouter feed. This is not an independently verified official provider quote. Snapshot: {TODAY}; USD per million tokens, default group; extra billing items may apply.</p><div class="grid2"><div class="card"><h3>{compare_label(model.provider)}</h3><div class="price-row"><span class="muted">Input per 1M tokens</span><span class="old">${money(prices['official_input'])}</span></div><div class="price-row"><span class="muted">Output per 1M tokens</span><span class="old">${money(prices['official_output'])}</span></div><div class="price-row"><span class="muted">Billing</span><span>Pay as you go</span></div></div><div class="card highlight"><span class="save">Save {prices['savings']}%</span><h3>Crazyrouter</h3><div class="price-row"><span class="muted">Input per 1M tokens</span><span class="green">${money(prices['crazy_input'])}</span></div><div class="price-row"><span class="muted">Output per 1M tokens</span><span class="green">${money(prices['crazy_output'])}</span></div><div class="price-row"><span class="muted">Billing</span><span>Model-specific API access</span></div></div></div><div class="banner">Save ${money(prices['official_input'] - prices['crazy_input'])} per 1M input tokens on {model.name}. This page is updated from the live Crazyrouter pricing feed and reviewed on a regular cadence.</div></section>
 <section><h2>{model.name} at a glance</h2><p class="subtitle">Use these details to decide whether this model fits the job before you wire it into production.</p><div class="grid4"><div class="card spec"><div class="label">Context window</div><div class="value">{model.context_window}</div></div><div class="card spec"><div class="label">Max output</div><div class="value">{model.max_output}</div></div><div class="card spec"><div class="label">Modality</div><div class="value">{model.modality}</div></div><div class="card spec"><div class="label">Latency profile</div><div class="value">{model.latency}</div></div></div></section>
 <section><h2>Best-fit use cases</h2><p class="subtitle">These are the production situations where this model is most likely to earn its keep.</p><div class="grid3">{section_cards('This is a strong fit when the workflow consistently looks like this.', model.best_for)}</div></section>
 <section><h2>When not to choose {model.name}</h2><p class="subtitle">High-quality landing pages should help visitors disqualify the wrong model, not just push every option.</p><div class="grid2">{section_cards('This is usually a sign that another model deserves a closer look first.', model.not_best_for)}</div></section>
@@ -550,7 +545,7 @@ console.log(response.choices[0].message.content);</pre></div></div></section>
 <section><h2>Explore related models</h2><p class="subtitle">Compare adjacent options for quality, latency, and price without rebuilding your API stack.</p><div class="grid3">{related_cards(model, prices_by_slug)}</div></section>
 </div>
 <section class="cta"><div class="wrap"><h2>Ready to use {model.name} through Crazyrouter?</h2><p class="subtitle">Create an account, get one API key, and route traffic to the model that best fits each workload instead of forcing every request through a single provider.</p><a class="btn primary" href="{register_link(model.slug)}">Get started</a></div></section>
-<div class="wrap"><div class="foot">© 2026 <a href="https://crazyrouter.com">Crazyrouter</a> · One API for 600+ AI models · <a href="/models/">Models</a> · <a href="https://docs.crazyrouter.com/introduction">Docs</a></div></div>
+<div class="wrap"><div class="foot">© 2026 <a href="https://crazyrouter.com">Crazyrouter</a> · Model-specific API access · <a href="/models/">Models</a> · <a href="https://docs.crazyrouter.com/introduction">Docs</a></div></div>
 <script>
 function showTab(event, name) {{
   document.querySelectorAll('.tab').forEach((el) => el.classList.remove('active'));
@@ -613,14 +608,13 @@ def index_page(prices_by_slug: dict[str, dict]) -> str:
 </head>
 <body>
 <div class="nav"><div class="wrap navin"><a class="brand" href="https://crazyrouter.com"><svg viewBox="0 0 563 648" width="24" height="28" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M167.5 190L276.5 190L277 191.5L253 234L247.5 235L235.5 234L217.5 234L191.5 234L164.5 235L150.5 239Q132.7 246.7 121 260.5Q108.2 275.2 102 296.5L99 312.5L99 335.5L102 351.5L110 371.5Q118.1 386.4 130.5 397Q143.5 409 164.5 413L173.5 413L258.5 414L314.5 318L433.5 318Q449.3 314.8 457 303.5L462 294.5L465 283.5L465 269.5L460 253.5L449.5 241L440.5 236L430.5 234L332.5 234L258.5 361L212.5 361L212 359.5L310.5 190L438.5 190L448.5 192L461.5 197Q476 205 486 217.5L496 233.5L502 250.5L504 260.5L504 268.5L505 269.5L505 283.5L504 284.5L503 297.5L499 311.5Q490.8 331.8 475.5 345L462.5 354L446 360.5L502 452.5L504 458L456.5 458L454 455.5L416 389.5L398.5 362L336.5 362L335 363.5L285 452.5L280.5 458L167.5 458L153.5 456Q112.4 445.6 90 416.5Q72.7 396.3 64 367.5L59 343.5L58 314.5L59 313.5L60 297.5L64 280.5L73 257.5Q85.3 233.8 104.5 217Q116.8 206.3 132.5 199L149.5 193L166.5 191L167.5 190Z"/></svg> Crazyrouter</a><div class="menu"><a class="active" href="/models/">Models</a><a href="https://crazyrouter.com/tools/pricing-calculator">Pricing</a><a href="https://docs.crazyrouter.com/introduction">Docs</a><a href="https://crazyrouter.com/tools/">Tools</a></div><a class="btn dark" href="{register_link('models-index')}">Get API Key</a></div></div>
-<div class="wrap"><section class="hero"><div class="badge">Crazyrouter model pages</div><h1>Compare popular AI models on <span>one API</span></h1><p class="lead">This hub supports a focused SEO strategy: a small set of maintained index-priority landing pages plus additional model pages kept accessible for comparison, routing, and campaign use.</p><div class="hero-actions"><a class="btn primary" href="{register_link('models-index')}">Start free</a><a class="btn light" href="#index-pages">Explore maintained pages</a></div></section><section><div class="grid4"><div class="card stat"><div class="label">Model pages</div><div class="value">{len(MODELS)}</div></div><div class="card stat"><div class="label">Index-priority pages</div><div class="value">{len(indexed_models)}</div></div><div class="card stat"><div class="label">Pages under review</div><div class="value">{len(review_models)}</div></div><div class="card stat"><div class="label">Lowest input price</div><div class="value">${money(cheapest['crazy_input'])}</div></div></div></section><section id="index-pages"><h2>Maintained index-priority pages</h2><p class="subtitle">These are the landing pages currently treated as the strongest long-term organic targets.</p><div class="grid3">{index_cards(indexed_models, prices_by_slug)}</div></section><section><h2>Additional model pages</h2><p class="subtitle">These pages remain useful for direct access, campaign traffic, and internal comparison, but they are not all prioritized for organic indexation yet.</p><div class="grid3">{index_cards(review_models, prices_by_slug)}</div></section><section><h2>Why this hub is structured this way</h2><p class="subtitle">The goal is not to mass-produce thin pages. It is to keep a small group of strong landing pages indexed, while still letting other model pages exist and mature over time.</p><div class="grid3"><div class="card"><h3>Index selectively</h3><p class="muted">Only a handful of pages are treated as long-term organic assets right now.</p></div><div class="card"><h3>Review continuously</h3><p class="muted">Each model page carries review metadata so stale pages can be revised, noindexed, or retired before quality drifts.</p></div><div class="card"><h3>Route with intent</h3><p class="muted">Users can still compare and click through the full model set without forcing every page into search results immediately.</p></div></div></section><div class="foot">© 2026 <a href="https://crazyrouter.com">Crazyrouter</a> · One API for 600+ AI models · <a href="https://docs.crazyrouter.com/introduction">Docs</a></div></div>
+<div class="wrap"><section class="hero"><div class="badge">Crazyrouter model pages</div><h1>Compare popular AI models on <span>one API</span></h1><p class="lead">This hub supports a focused SEO strategy: a small set of maintained index-priority landing pages plus additional model pages kept accessible for comparison, routing, and campaign use.</p><div class="hero-actions"><a class="btn primary" href="{register_link('models-index')}">Create an account</a><a class="btn light" href="#index-pages">Explore maintained pages</a></div></section><section><div class="grid4"><div class="card stat"><div class="label">Model pages</div><div class="value">{len(MODELS)}</div></div><div class="card stat"><div class="label">Index-priority pages</div><div class="value">{len(indexed_models)}</div></div><div class="card stat"><div class="label">Pages under review</div><div class="value">{len(review_models)}</div></div><div class="card stat"><div class="label">Lowest input price</div><div class="value">${money(cheapest['crazy_input'])}</div></div></div></section><section id="index-pages"><h2>Maintained index-priority pages</h2><p class="subtitle">These are the landing pages currently treated as the strongest long-term organic targets.</p><div class="grid3">{index_cards(indexed_models, prices_by_slug)}</div></section><section><h2>Additional model pages</h2><p class="subtitle">These pages remain useful for direct access, campaign traffic, and internal comparison, but they are not all prioritized for organic indexation yet.</p><div class="grid3">{index_cards(review_models, prices_by_slug)}</div></section><section><h2>Why this hub is structured this way</h2><p class="subtitle">The goal is not to mass-produce thin pages. It is to keep a small group of strong landing pages indexed, while still letting other model pages exist and mature over time.</p><div class="grid3"><div class="card"><h3>Index selectively</h3><p class="muted">Only a handful of pages are treated as long-term organic assets right now.</p></div><div class="card"><h3>Review continuously</h3><p class="muted">Each model page carries review metadata so stale pages can be revised, noindexed, or retired before quality drifts.</p></div><div class="card"><h3>Route with intent</h3><p class="muted">Users can still compare and click through the full model set without forcing every page into search results immediately.</p></div></div></section><div class="foot">© 2026 <a href="https://crazyrouter.com">Crazyrouter</a> · Model-specific API access · <a href="https://docs.crazyrouter.com/introduction">Docs</a></div></div>
 </body>
 </html>'''
 
 
 def sitemap() -> str:
-    # Lists every legacy URL (not just index-priority ones) so Google recrawls each and sees its 301.
-    indexed_urls = ["https://crazyrouter.com/models/"] + [page_link(model.slug) for model in MODELS]
+    indexed_urls = ["https://crazyrouter.com/models/"] + [page_link(model.slug) for model in MODELS if model.seo_status == "index"]
     rows = ["<?xml version=\"1.0\" encoding=\"UTF-8\"?>", '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
     for url in indexed_urls:
         rows.append("  <url>")
@@ -631,36 +625,32 @@ def sitemap() -> str:
     return "\n".join(rows)
 
 
-def published_record(slug: str) -> dict | None:
-    """Recover model_ratio / completion_ratio / discount from the last generated page so a model that
-    disappeared from the live feed keeps its published prices instead of breaking the whole build."""
-    page = ROOT / slug / "index.html"
-    if not page.exists():
-        return None
-    html = page.read_text(encoding="utf-8")
-    m = re.search(r'<span class="old">\$([0-9.]+)</span></div><div class="price-row"><span class="muted">Output per 1M tokens</span><span class="old">\$([0-9.]+)</span>.*?<span class="green">\$([0-9.]+)</span>', html, re.S)
-    if not m:
-        return None
-    off_in, off_out, cr_in = (float(x) for x in m.groups())
-    return {"model_ratio": off_in / 2, "completion_ratio": off_out / off_in if off_in else 1, "discount": cr_in / off_in if off_in else 1}
+def unavailable_page(model: Model) -> str:
+    name = escape(model.name)
+    return f'<!doctype html><html lang="en"><head><meta charset="utf-8"><title>{name}: check current availability</title><meta name="robots" content="noindex,follow"></head><body><main><h1>{name}</h1><p>Checked {TODAY}. This exact model ID is not in the current public catalogue. Historical prices have been withdrawn. Catalogue absence alone does not establish that every compatibility alias is unavailable.</p><p><a href="https://crazyrouter.com/en/models">Current models</a> · <a href="https://crazyrouter.com/en/pricing">Current prices</a></p></main></body></html>'
 
 
 def build() -> None:
+    global MODELS, BY_SLUG
     records = fetch_prices()
-    prices_by_slug: dict[str, dict] = {}
-    for model in MODELS:
+    all_models = MODELS
+    available = []
+    prices_by_slug = {}
+    for model in all_models:
         record = records.get(model.api_model)
-        if record is None:
-            # model retired from the live feed: keep the numbers already published on the page
-            record = published_record(model.slug)
-            if record is None:
-                raise KeyError(f"Missing pricing record for {model.api_model}")
-            print(f"[warn] {model.api_model} not in pricing feed; reusing published prices for /{model.slug}")
-        prices_by_slug[model.slug] = compute_price(record)
-    for model in MODELS:
         target = ROOT / model.slug
         target.mkdir(parents=True, exist_ok=True)
-        target.joinpath("index.html").write_text(page_template(model, prices_by_slug[model.slug], prices_by_slug), encoding="utf-8")
+        if record is None:
+            target.joinpath("index.html").write_text(unavailable_page(model), encoding="utf-8")
+            print(f"Unavailable in public catalogue: {model.api_model}")
+            continue
+        model = replace(model, last_reviewed=TODAY)
+        available.append(model)
+        prices_by_slug[model.slug] = compute_price(record)
+    MODELS = available
+    BY_SLUG = {model.slug: model for model in all_models}
+    for model in MODELS:
+        (ROOT / model.slug / "index.html").write_text(page_template(model, prices_by_slug[model.slug], prices_by_slug), encoding="utf-8")
     ROOT.joinpath("index.html").write_text(index_page(prices_by_slug), encoding="utf-8")
     ROOT.joinpath("sitemap.xml").write_text(sitemap(), encoding="utf-8")
 
