@@ -21,19 +21,28 @@
   "@type": "Product",
   "name": "GPT-5 API via Crazyrouter",
   "description": "Use GPT-5 through Crazyrouter when you need a premium reasoning model but still want unified billing, cleaner model switching, and an OpenAI-style API surface.",
+  "image": [
+    "https://crazyrouter.com/twitter-card.png"
+  ],
+  "sku": "gpt-5-chat",
   "url": "https://crazyrouter.com/models/gpt-5",
   "brand": {
-    "@type": "Organization",
-    "name": "Crazyrouter",
-    "url": "https://crazyrouter.com",
-    "logo": "https://crazyrouter.com/logo.png"
+    "@type": "Brand",
+    "name": "OpenAI"
   },
   "offers": {
     "@type": "Offer",
     "price": "0.69",
     "priceCurrency": "USD",
     "description": "Per 1M input tokens",
-    "availability": "https://schema.org/InStock"
+    "url": "https://crazyrouter.com/models/gpt-5",
+    "availability": "https://schema.org/InStock",
+    "seller": {
+      "@type": "Organization",
+      "name": "Crazyrouter",
+      "url": "https://crazyrouter.com",
+      "logo": "https://crazyrouter.com/logo.png"
+    }
   }
 }</script>
 <script type="application/ld+json">{
@@ -45,7 +54,7 @@
       "name": "How much does GPT-5 cost on Crazyrouter?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "GPT-5 costs $0.69 per 1M input tokens and $5.50 per 1M output tokens on Crazyrouter from the current pricing feed. That is 45% below the direct list price referenced on this page."
+        "text": "GPT-5 costs $0.69 per 1M input tokens and $5.52 per 1M output tokens on Crazyrouter based on the latest pricing sync. That is 45% lower than the direct list price used on this page."
       }
     },
     {
@@ -133,7 +142,7 @@ const response = await client.chat.completions.create({
 });
 
 console.log(response.choices[0].message.content);</pre></div></div></section>
-<section><h2>Frequently asked questions</h2><details class="faq"><summary>How much does GPT-5 cost on Crazyrouter?</summary><p>GPT-5 costs $0.69 per 1M input tokens and $5.50 per 1M output tokens on Crazyrouter from the current pricing feed. That is 45% below the direct list price referenced on this page.</p></details><details class="faq"><summary>Who should actually pay for GPT-5?</summary><p>Teams should pay for GPT-5 when model quality changes the business result, such as complex coding, difficult planning, or high-value research workflows. For lighter production traffic, GPT-5 Mini or GPT-4o may be more efficient.</p></details><details class="faq"><summary>Is GPT-5 available through an OpenAI-compatible API?</summary><p>Yes. GPT-5 can be called on Crazyrouter with the same general SDK pattern many teams already use for OpenAI integrations.</p></details><details class="faq"><summary>Why not use GPT-5 for everything?</summary><p>Because a premium reasoning model is not always the best cost-performance choice. Many teams route only the hardest requests to GPT-5 and keep routine requests on cheaper models.</p></details><details class="faq"><summary>What does the 400K context window matter for?</summary><p>A very large context window is useful for long documents, large codebases, agent memory, and workflows where the model needs to reason over more background at once.</p></details><details class="faq"><summary>Why keep this page indexed rather than treat it as a throwaway landing page?</summary><p>GPT-5 is a core commercial-intent term. This page is intended to be a maintained decision page with pricing, usage guidance, and comparison context rather than a thin paid-traffic page.</p></details></section>
+<section><h2>Frequently asked questions</h2><details class="faq"><summary>How much does GPT-5 cost on Crazyrouter?</summary><p>GPT-5 costs $0.69 per 1M input tokens and $5.52 per 1M output tokens on Crazyrouter based on the latest pricing sync. That is 45% lower than the direct list price used on this page.</p></details><details class="faq"><summary>Who should actually pay for GPT-5?</summary><p>Teams should pay for GPT-5 when model quality changes the business result, such as complex coding, difficult planning, or high-value research workflows. For lighter production traffic, GPT-5 Mini or GPT-4o may be more efficient.</p></details><details class="faq"><summary>Is GPT-5 available through an OpenAI-compatible API?</summary><p>Yes. GPT-5 can be called on Crazyrouter with the same general SDK pattern many teams already use for OpenAI integrations.</p></details><details class="faq"><summary>Why not use GPT-5 for everything?</summary><p>Because a premium reasoning model is not always the best cost-performance choice. Many teams route only the hardest requests to GPT-5 and keep routine requests on cheaper models.</p></details><details class="faq"><summary>What does the 400K context window matter for?</summary><p>A very large context window is useful for long documents, large codebases, agent memory, and workflows where the model needs to reason over more background at once.</p></details><details class="faq"><summary>Why keep this page indexed rather than treat it as a throwaway landing page?</summary><p>GPT-5 is a core commercial-intent term. This page is intended to be a maintained decision page with pricing, usage guidance, and comparison context rather than a thin paid-traffic page.</p></details></section>
 <section><h2>Explore related models</h2><p class="subtitle">Compare adjacent options for quality, latency, and price without rebuilding your API stack.</p><div class="grid3"><a href="/models/gpt-4o" class="card related"><h3>GPT-4o</h3><p>OpenAI's mainstream multimodal model for chat, vision, and production assistants.</p><span>From $2.75 / 1M input</span></a><a href="/models/gpt-5-mini" class="card related"><h3>GPT-5 Mini</h3><p>A lower-cost GPT-5 variant for high-volume chat, extraction, and lightweight coding.</p><span>From $0.16 / 1M input</span></a><a href="/models/o3" class="card related"><h3>o3</h3><p>OpenAI's reasoning model for deeper analysis, hard coding tasks, and agent backends.</p><span>From $2.00 / 1M input</span></a></div></section>
 </div>
 <section class="cta"><div class="wrap"><h2>Ready to use GPT-5 through Crazyrouter?</h2><p class="subtitle">Create an account, get one API key, and route traffic to the model that best fits each workload instead of forcing every request through a single provider.</p><a class="btn primary" href="https://crazyrouter.com/#/register?utm_source=models&utm_medium=landing&utm_campaign=gpt-5">Get started</a></div></section>

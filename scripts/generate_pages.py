@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PRICING_URL = "https://crazyrouter.com/api/pricing"
 REGISTER_URL = "https://crazyrouter.com/#/register"
 SITE_URL = "https://crazyrouter.com/models"
+OG_IMAGE = "https://crazyrouter.com/twitter-card.png"
 TODAY = date.today().isoformat()
 
 
@@ -376,9 +377,16 @@ def compute_price(record: dict) -> dict[str, float | int]:
     }
 
 
+def price_faq(model: Model, prices: dict) -> tuple[str, str]:
+    answer = f"{model.name} costs ${money(prices['crazy_input'])} per 1M input tokens and ${money(prices['crazy_output'])} per 1M output tokens on Crazyrouter based on the latest pricing sync."
+    if prices["savings"] > 0:
+        answer += f" That is {prices['savings']}% lower than the direct list price used on this page."
+    return (f"How much does {model.name} cost on Crazyrouter?", answer)
+
+
 def default_faq(model: Model, prices: dict) -> tuple[tuple[str, str], ...]:
     return (
-        (f"How much does {model.name} cost on Crazyrouter?", f"{model.name} costs ${money(prices['crazy_input'])} per 1M input tokens and ${money(prices['crazy_output'])} per 1M output tokens on Crazyrouter based on the latest pricing sync."),
+        price_faq(model, prices),
         (f"Is {model.name} available through an OpenAI-compatible API?", f"Yes. {model.name} can be accessed through Crazyrouter with the same general OpenAI-compatible request flow used across the platform."),
         (f"What is {model.name} best for?", f"{model.name} is best suited to {model.best_for[0].lower()}, {model.best_for[1].lower()}, and {model.best_for[2].lower()}."),
         (f"When should this page stay out of search results?", f"This page is currently marked noindex because it is useful for navigation and campaign traffic, but it is not yet one of the small set of landing pages prioritized for long-term organic indexation."),
@@ -386,7 +394,9 @@ def default_faq(model: Model, prices: dict) -> tuple[tuple[str, str], ...]:
 
 
 def schema_product(model: Model, prices: dict) -> str:
-    return json.dumps({"@context": "https://schema.org", "@type": "Product", "name": f"{model.name} API via Crazyrouter", "description": model.description, "url": page_link(model.slug), "brand": {"@type": "Organization", "name": "Crazyrouter", "url": "https://crazyrouter.com", "logo": "https://crazyrouter.com/logo.png"}, "offers": {"@type": "Offer", "price": money(prices["crazy_input"]), "priceCurrency": "USD", "description": "Per 1M input tokens", "availability": "https://schema.org/InStock"}}, ensure_ascii=False, indent=2)
+    # Product + Offer is validated as a Google merchant listing: image is required and brand must be a Brand
+    # (the model vendor); Crazyrouter is the seller of the offer, not the brand.
+    return json.dumps({"@context": "https://schema.org", "@type": "Product", "name": f"{model.name} API via Crazyrouter", "description": model.description, "image": [OG_IMAGE], "sku": model.api_model, "url": page_link(model.slug), "brand": {"@type": "Brand", "name": model.provider}, "offers": {"@type": "Offer", "price": money(prices["crazy_input"]), "priceCurrency": "USD", "description": "Per 1M input tokens", "url": page_link(model.slug), "availability": "https://schema.org/InStock", "seller": {"@type": "Organization", "name": "Crazyrouter", "url": "https://crazyrouter.com", "logo": "https://crazyrouter.com/logo.png"}}}, ensure_ascii=False, indent=2)
 
 
 def schema_faq(items: tuple[tuple[str, str], ...]) -> str:
@@ -448,7 +458,8 @@ def robots_meta(model: Model) -> str:
 
 
 def page_template(model: Model, prices: dict, prices_by_slug: dict[str, dict]) -> str:
-    faq = model.faq or default_faq(model, prices)
+    # Hand-written FAQs keep their editorial answers, but the price answer always comes from the live sync.
+    faq = ((price_faq(model, prices),) + model.faq[1:]) if model.faq else default_faq(model, prices)
     title = f"{model.name} API Pricing & Access - Save {prices['savings']}% | Crazyrouter"
     description = f"Access {model.name} API at ${money(prices['crazy_input'])} per 1M input tokens and ${money(prices['crazy_output'])} per 1M output tokens via Crazyrouter. OpenAI-compatible access, clear pricing, and {prices['savings']}% below direct pricing where applicable."
     return f'''<!DOCTYPE html>
